@@ -1,0 +1,98 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: transaction-management
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: transaction-management
+  namespace: transaction-management
+data:
+  DB_URL: jdbc:h2:mem:testdb
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: transaction-management
+  namespace: transaction-management
+type: Opaque
+data:
+  DB_USER: aHNiYw
+  DB_PW: dGVzdA
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: transaction-management
+  namespace: transaction-management
+  labels:
+    app: transaction-management
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: transaction-management
+  template:
+    metadata:
+      labels:
+        app: transaction-management
+    spec:
+      containers:
+        - name: transaction-management
+          image: transaction-management:v1.0
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: transaction-management
+            - secretRef:
+                name: transaction-management
+          resources:
+            requests:
+              memory: "500Mi"
+              cpu: "250m"
+            limits:
+              memory: "2Gi"
+              cpu: "500m"
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: transaction-management
+  namespace: transaction-management
+spec:
+  selector:
+    app: transaction-management
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+  type: LoadBalancer
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: transaction-management
+  namespace: transaction-management
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+spec:
+  tls:
+    - hosts:
+        - transaction.example.com
+      secretName: transaction-management-tls
+  rules:
+    - host: transaction.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: transaction-management
+                port:
+                  number: 8080
