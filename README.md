@@ -37,9 +37,10 @@ kubectl apply -f k8s-all-in-one.yml
 
 ## Swagger
 Run the app locally, then access http://localhost:8080/api/swagger-ui/index.html#/
+
 ![img.png](images\swagger.png)
 
-## 测试
+## Test
 ### UT and IT
 ```
 mvn test
